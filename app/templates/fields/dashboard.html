@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — SmartSeason{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fa-solid fa-map"></i></div>
+      <div>
+        <div class="stat-value">{{ total_fields }}</div>
+        <div class="stat-label">Total Fields</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+      <div>
+        <div class="stat-value">{{ active_count }}</div>
+        <div class="stat-label">Active</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon gold"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div>
+        <div class="stat-value">{{ at_risk_count }}</div>
+        <div class="stat-label">At Risk</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-xl-3">
+    <div class="stat-card">
+      <div class="stat-icon gray"><i class="fa-solid fa-flag-checkered"></i></div>
+      <div>
+        <div class="stat-value">{{ completed_count }}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Stage Breakdown -->
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <i class="fa-solid fa-chart-pie me-2" style="color:var(--gold-main);"></i>Stage Breakdown
+      </div>
+      <div class="card-body p-3">
+        {% for stage, count in stage_counts.items %}
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="stage-badge stage-{{ stage }}">{{ stage|title }}</span>
+            <span style="font-size:0.85rem;font-weight:600;color:var(--green-dark);">{{ count }}</span>
+          </div>
+          <div class="progress">
+            <div class="progress-bar" style="width:{% if total_fields %}{% widthratio count total_fields 100 %}{% else %}0{% endif %}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Fields Table -->
+  <div class="col-12 col-lg-8">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+          <i class="fa-solid fa-seedling me-2" style="color:var(--gold-main);"></i>
+          {% if profile.is_admin %}All Fields{% else %}My Fields{% endif %}
+        </span>
+        <a href="{% url 'field_list' %}" style="font-size:0.8rem;color:var(--green-main);text-decoration:none;white-space:nowrap;">
+          View all <i class="fa-solid fa-arrow-right ms-1"></i>
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if fields %}
+        <div class="table-responsive-wrapper">
+          <table class="smart-table">
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th class="hide-mobile">Crop</th>
+                <th>Stage</th>
+                <th>Status</th>
+                {% if profile.is_admin %}<th class="hide-mobile">Agent</th>{% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for field in fields|slice:":8" %}
+              <tr>
+                <td>
+                  <a href="{% url 'field_detail' field.pk %}" style="color:var(--green-dark);font-weight:600;text-decoration:none;">
+                    {{ field.name }}
+                  </a>
+                  {% if field.location %}
+                  <div style="font-size:0.73rem;color:var(--text-muted);">
+                    <i class="fa-solid fa-location-dot me-1"></i>{{ field.location }}
+                  </div>
+                  {% endif %}
+                  <!-- Show crop on mobile inline -->
+                  <div class="d-md-none mt-1" style="font-size:0.73rem;color:var(--text-muted);text-transform:capitalize;">
+                    <i class="fa-solid fa-seedling me-1"></i>{{ field.crop_type }}
+                  </div>
+                </td>
+                <td class="hide-mobile" style="text-transform:capitalize;">{{ field.crop_type }}</td>
+                <td>
+                  <span class="stage-badge stage-{{ field.current_stage }}">
+                    {{ field.get_current_stage_display }}
+                  </span>
+                </td>
+                <td>
+                  <span class="stage-badge badge-{{ field.computed_status }}">
+                    {% if field.computed_status == 'at_risk' %}At Risk
+                    {% elif field.computed_status == 'completed' %}Done
+                    {% else %}Active{% endif %}
+                  </span>
+                </td>
+                {% if profile.is_admin %}
+                <td class="hide-mobile" style="font-size:0.82rem;color:var(--text-muted);">
+                  {{ field.assigned_agent.get_full_name|default:field.assigned_agent.username|default:"—" }}
+                </td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="color:var(--text-muted);">
+          <i class="fa-solid fa-seedling mb-3 d-block" style="font-size:2.5rem;color:var(--green-light);"></i>
+          <p class="mb-3">No fields found.</p>
+          {% if profile.is_admin %}
+          <a href="{% url 'field_create' %}" class="btn-green">
+            <i class="fa-solid fa-plus me-1"></i>Add First Field
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--gold-main);"></i>Recent Activity
+      </div>
+      <div class="card-body">
+        {% if recent_updates %}
+        <div class="timeline">
+          {% for update in recent_updates %}
+          <div class="timeline-item">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div style="min-width:0;">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                  <a href="{% url 'field_detail' update.field.pk %}"
+                     style="color:var(--green-dark);font-weight:600;font-size:0.875rem;text-decoration:none;">
+                    {{ update.field.name }}
+                  </a>
+                  <span style="color:var(--text-muted);font-size:0.78rem;">→</span>
+                  <span class="stage-badge stage-{{ update.stage }}">{{ update.get_stage_display }}</span>
+                </div>
+                {% if update.notes %}
+                <p style="font-size:0.82rem;color:var(--text-muted);background:var(--gray-soft);border-radius:8px;padding:8px 12px;margin:0;border-left:3px solid var(--green-main);word-break:break-word;">
+                  {{ update.notes|truncatechars:120 }}
+                </p>
+                {% endif %}
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-size:0.73rem;color:var(--text-muted);white-space:nowrap;">{{ update.created_at|timesince }} ago</div>
+                <div style="font-size:0.73rem;color:var(--green-main);white-space:nowrap;">{{ update.updated_by.username }}</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-4" style="color:var(--text-muted);">
+          <i class="fa-solid fa-inbox d-block mb-2" style="font-size:2rem;color:var(--green-light);"></i>
+          No recent activity yet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

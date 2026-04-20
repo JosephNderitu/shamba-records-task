@@ -1,0 +1,194 @@
+
+{% extends 'base.html' %}
+{% block title %}Fields — SmartSeason{% endblock %}
+{% block page_title %}Fields{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item active">All Fields</li>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filters & Search -->
+<div class="card mb-4">
+  <div class="card-body p-3">
+    <form method="GET">
+      <div class="row g-2 align-items-end">
+
+        <div class="col-12 col-md-4">
+          <label class="form-label">Search</label>
+          <div style="position:relative;">
+            <i class="fa-solid fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.8rem;"></i>
+            <input type="text" name="search" class="form-control" style="padding-left:34px;"
+                   placeholder="Name, crop, location..." value="{{ search }}"/>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label">Stage</label>
+          <select name="stage" class="form-select">
+            <option value="">All Stages</option>
+            <option value="planted"   {% if stage_filter == 'planted'   %}selected{% endif %}>Planted</option>
+            <option value="growing"   {% if stage_filter == 'growing'   %}selected{% endif %}>Growing</option>
+            <option value="ready"     {% if stage_filter == 'ready'     %}selected{% endif %}>Ready</option>
+            <option value="harvested" {% if stage_filter == 'harvested' %}selected{% endif %}>Harvested</option>
+          </select>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="active"    {% if status_filter == 'active'    %}selected{% endif %}>Active</option>
+            <option value="at_risk"   {% if status_filter == 'at_risk'   %}selected{% endif %}>At Risk</option>
+            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md-2 d-flex gap-2">
+          <button type="submit" class="btn-green btn w-100">
+            <i class="fa-solid fa-filter me-1"></i>
+            <span class="d-none d-sm-inline">Filter</span>
+          </button>
+          <a href="{% url 'field_list' %}" class="btn btn-outline-secondary" style="border-radius:8px;padding:9px 14px;" title="Clear filters">
+            <i class="fa-solid fa-xmark"></i>
+          </a>
+        </div>
+
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Results count -->
+{% if fields %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <p style="color:var(--text-muted);font-size:0.82rem;margin:0;">
+    Showing <strong style="color:var(--green-dark);">{{ fields|length }}</strong> field{{ fields|length|pluralize }}
+    {% if search or stage_filter or status_filter %}
+    <a href="{% url 'field_list' %}" style="color:var(--gold-main);font-size:0.78rem;margin-left:8px;text-decoration:none;">
+      <i class="fa-solid fa-xmark me-1"></i>Clear filters
+    </a>
+    {% endif %}
+  </p>
+  {% if profile.is_admin %}
+  <a href="{% url 'field_create' %}" class="btn-green" style="font-size:0.8rem;padding:7px 14px;">
+    <i class="fa-solid fa-plus me-1"></i>Add Field
+  </a>
+  {% endif %}
+</div>
+
+<!-- Fields Grid -->
+<div class="row g-3">
+  {% for field in fields %}
+  <div class="col-12 col-sm-6 col-xl-4">
+    <div class="field-card {{ field.computed_status }}">
+
+      <!-- Card Header -->
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <div style="min-width:0;padding-right:10px;">
+          <h6 style="font-family:'Playfair Display',serif;color:var(--green-dark);margin:0;font-size:0.95rem;word-break:break-word;">
+            {{ field.name }}
+          </h6>
+          {% if field.location %}
+          <small style="color:var(--text-muted);font-size:0.72rem;">
+            <i class="fa-solid fa-location-dot me-1"></i>{{ field.location|truncatechars:30 }}
+          </small>
+          {% endif %}
+        </div>
+        <span class="stage-badge badge-{{ field.computed_status }}" style="flex-shrink:0;">
+          {% if field.computed_status == 'at_risk' %}At Risk
+          {% elif field.computed_status == 'completed' %}Done
+          {% else %}Active{% endif %}
+        </span>
+      </div>
+
+      <!-- Info Grid -->
+      <div class="row g-2 mb-3">
+        <div class="col-6">
+          <div style="background:var(--gray-soft);border-radius:8px;padding:9px 10px;">
+            <div style="font-size:0.67rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Crop</div>
+            <div style="font-size:0.84rem;font-weight:600;color:var(--green-dark);text-transform:capitalize;">{{ field.crop_type }}</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div style="background:var(--gray-soft);border-radius:8px;padding:9px 10px;">
+            <div style="font-size:0.67rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Stage</div>
+            <div><span class="stage-badge stage-{{ field.current_stage }}" style="font-size:0.65rem;">{{ field.get_current_stage_display }}</span></div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div style="background:var(--gray-soft);border-radius:8px;padding:9px 10px;">
+            <div style="font-size:0.67rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Planted</div>
+            <div style="font-size:0.8rem;font-weight:500;">{{ field.planting_date }}</div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div style="background:var(--gray-soft);border-radius:8px;padding:9px 10px;">
+            <div style="font-size:0.67rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Days</div>
+            <div style="font-size:0.875rem;font-weight:700;color:var(--green-dark);">{{ field.days_since_planting }}d</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent -->
+      {% if profile.is_admin and field.assigned_agent %}
+      <div style="font-size:0.76rem;color:var(--text-muted);margin-bottom:12px;">
+        <i class="fa-solid fa-user me-1" style="color:var(--green-main);"></i>
+        {{ field.assigned_agent.get_full_name|default:field.assigned_agent.username }}
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="d-flex gap-2">
+        <a href="{% url 'field_detail' field.pk %}" class="btn-green flex-fill"
+           style="font-size:0.78rem;padding:7px 10px;justify-content:center;">
+          <i class="fa-solid fa-eye me-1"></i>View
+        </a>
+        <a href="{% url 'field_update' field.pk %}" class="btn-gold flex-fill"
+           style="font-size:0.78rem;padding:7px 10px;justify-content:center;">
+          <i class="fa-solid fa-pen me-1"></i>Update
+        </a>
+        {% if profile.is_admin %}
+        <a href="{% url 'field_edit' field.pk %}"
+           style="padding:7px 10px;border-radius:8px;border:1.5px solid var(--gray-border);background:#fff;color:var(--text-muted);font-size:0.78rem;text-decoration:none;display:flex;align-items:center;"
+           title="Edit field">
+          <i class="fa-solid fa-gear"></i>
+        </a>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+
+<!-- Empty State -->
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="fa-solid fa-seedling d-block mb-3" style="font-size:3rem;color:var(--green-light);"></i>
+    <h5 style="color:var(--green-dark);">No fields found</h5>
+    <p style="color:var(--text-muted);font-size:0.875rem;max-width:300px;margin:0 auto 20px;">
+      {% if search or stage_filter or status_filter %}
+        No fields match your current filters. Try adjusting your search.
+      {% else %}
+        No fields have been added to the system yet.
+      {% endif %}
+    </p>
+    {% if search or stage_filter or status_filter %}
+    <a href="{% url 'field_list' %}" class="btn-green me-2" style="font-size:0.85rem;">
+      <i class="fa-solid fa-xmark me-1"></i>Clear Filters
+    </a>
+    {% endif %}
+    {% if profile.is_admin %}
+    <a href="{% url 'field_create' %}" class="btn-green" style="font-size:0.85rem;">
+      <i class="fa-solid fa-plus me-1"></i>Add First Field
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

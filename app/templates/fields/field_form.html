@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}{% if field %}Edit{% else %}New{% endif %} Field — SmartSeason{% endblock %}
+{% block page_title %}{% if field %}Edit Field{% else %}New Field{% endif %}{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'field_list' %}">Fields</a></li>
+<li class="breadcrumb-item active">{% if field %}Edit{% else %}Create{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-{% if field %}pen{% else %}plus{% endif %} me-2" style="color:var(--gold-main);"></i>
+        {% if field %}Edit "{{ field.name }}"{% else %}Add New Field{% endif %}
+      </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="row g-3">
+
+            <div class="col-12">
+              <label class="form-label">Field Name *</label>
+              <input type="text" name="name" class="form-control" placeholder="e.g. North Valley Plot A"
+                     value="{{ field.name|default:'' }}" required/>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Crop Type *</label>
+              <select name="crop_type" class="form-select" required>
+                {% for value, label in crop_choices %}
+                <option value="{{ value }}" {% if field.crop_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Current Stage *</label>
+              <select name="current_stage" class="form-select" required>
+                {% for value, label in stage_choices %}
+                <option value="{{ value }}" {% if field.current_stage == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Planting Date *</label>
+              <input type="date" name="planting_date" class="form-control"
+                     value="{{ field.planting_date|date:'Y-m-d'|default:'' }}" required/>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Size (acres)</label>
+              <input type="number" name="size_acres" class="form-control" step="0.01" min="0"
+                     placeholder="e.g. 5.50" value="{{ field.size_acres|default:'' }}"/>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Location / Description</label>
+              <input type="text" name="location" class="form-control"
+                     placeholder="e.g. Nakuru County, Rift Valley"
+                     value="{{ field.location|default:'' }}"/>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Assign Field Agent</label>
+              <select name="assigned_agent" class="form-select">
+                <option value="">— Unassigned —</option>
+                {% for agent in agents %}
+                <option value="{{ agent.pk }}"
+                  {% if field.assigned_agent_id == agent.pk %}selected{% endif %}>
+                  {{ agent.get_full_name|default:agent.username }} ({{ agent.username }})
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+              <button type="submit" class="btn-green btn px-4">
+                <i class="fa-solid fa-floppy-disk me-2"></i>
+                {% if field %}Save Changes{% else %}Create Field{% endif %}
+              </button>
+              <a href="{% url 'field_list' %}" class="btn btn-outline-secondary px-4" style="border-radius:8px;">
+                Cancel
+              </a>
+            </div>
+
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

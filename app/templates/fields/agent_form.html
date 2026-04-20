@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Add Agent — SmartSeason{% endblock %}
+{% block page_title %}Add User{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'agent_list' %}">Agents</a></li>
+<li class="breadcrumb-item active">Add</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <i class="fa-solid fa-user-plus me-2" style="color:var(--gold-main);"></i>Create New User
+      </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="row g-3">
+
+            <div class="col-md-6">
+              <label class="form-label">First Name</label>
+              <input type="text" name="first_name" class="form-control" placeholder="John"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name</label>
+              <input type="text" name="last_name" class="form-control" placeholder="Doe"/>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Username *</label>
+              <input type="text" name="username" class="form-control" placeholder="johndoe" required/>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="john@example.com"/>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Role *</label>
+              <select name="role" class="form-select" required>
+                <option value="agent">Field Agent</option>
+                <option value="admin">Admin (Coordinator)</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Password *</label>
+              <input type="password" name="password" class="form-control" placeholder="Set a strong password" required/>
+            </div>
+
+            <div class="col-12 d-flex gap-2 mt-2">
+              <button type="submit" class="btn-green btn px-4">
+                <i class="fa-solid fa-user-check me-2"></i>Create User
+              </button>
+              <a href="{% url 'agent_list' %}" class="btn btn-outline-secondary px-4" style="border-radius:8px;">
+                Cancel
+              </a>
+            </div>
+
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block auth_content %}
+<div style="min-height:100vh; background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 60%, var(--gold-main) 100%); display:flex; align-items:center; justify-content:center; padding: 20px;">
+
+  <div style="width:100%; max-width:420px;">
+
+    <!-- Logo -->
+    <div class="text-center mb-4">
+      <div style="width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;backdrop-filter:blur(10px);">
+        <i class="fa-solid fa-seedling" style="font-size:1.8rem;color:var(--gold-light);"></i>
+      </div>
+      <h2 style="color:#fff;font-family:'Playfair Display',serif;font-size:1.8rem;">SmartSeason</h2>
+      <p style="color:rgba(255,255,255,0.65);font-size:0.85rem;margin-top:4px;">Field Monitoring System</p>
+    </div>
+
+    <!-- Card -->
+    <div style="background:#fff;border-radius:16px;padding:36px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <h5 style="color:var(--green-dark);margin-bottom:6px;font-size:1.1rem;">Welcome back</h5>
+      <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:24px;">Sign in to your account to continue</p>
+
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-danger mb-3" style="font-size:0.825rem;">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>{{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <div style="position:relative;">
+            <i class="fa-solid fa-user" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem;"></i>
+            <input type="text" name="username" class="form-control" style="padding-left:38px;" placeholder="Enter your username" required autofocus/>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Password</label>
+          <div style="position:relative;">
+            <i class="fa-solid fa-lock" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem;"></i>
+            <input type="password" name="password" id="passwordInput" class="form-control" style="padding-left:38px;padding-right:42px;" placeholder="Enter your password" required/>
+            <button type="button" onclick="togglePassword()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;padding:0;">
+              <i class="fa-solid fa-eye" id="eyeIcon" style="font-size:0.85rem;"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-green btn w-100" style="padding:12px;">
+          <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center mt-3" style="color:rgba(255,255,255,0.5);font-size:0.78rem;">
+      SmartSeason &copy; 2024 &mdash; Agricultural Field Intelligence
+    </p>
+  </div>
+</div>
+
+<script>
+function togglePassword() {
+  const input = document.getElementById('passwordInput');
+  const icon = document.getElementById('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye', 'fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.replace('fa-eye-slash', 'fa-eye');
+  }
+}
+</script>
+{% endblock %}
