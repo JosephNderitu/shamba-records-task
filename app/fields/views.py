@@ -355,3 +355,18 @@ def agent_create(request):
 
     context = {'profile': profile}
     return render(request, 'fields/agent_form.html', context)
+
+def create_admin(request):
+    from django.http import HttpResponse
+    secret = request.GET.get('secret', '')
+    if secret != 'smartseason-setup-2026':
+        return HttpResponse('Forbidden', status=403)
+    
+    User.objects.filter(username='Admin').delete()
+    u = User.objects.create_superuser(
+        username='Admin',
+        email='test.admin@gmail.com',
+        password='Admin@2026'
+    )
+    UserProfile.objects.get_or_create(user=u, defaults={'role': 'admin'})
+    return HttpResponse(f'✅ Admin created! Username: Admin | Go to /login/ and sign in. DELETE this URL from views.py after use!')
