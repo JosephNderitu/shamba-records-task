@@ -13,9 +13,17 @@ RUN apt-get update && apt-get install -y \
 COPY app/requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
+# Copy AFTER installing requirements
 COPY app/ .
 
-RUN python manage.py collectstatic --noinput || true
+# Collect static AFTER everything is copied
+RUN SECRET_KEY=temp-build-key \
+    POSTGRES_DB=temp \
+    POSTGRES_USER=temp \
+    POSTGRES_PASSWORD=temp \
+    DB_HOST=localhost \
+    DB_PORT=5432 \
+    python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
