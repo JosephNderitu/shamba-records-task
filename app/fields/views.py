@@ -108,6 +108,19 @@ def dashboard(request):
         'labels': [c['crop_type'].capitalize() for c in crop_counts],
         'values': [c['count'] for c in crop_counts],
     })
+    agent_performance = None
+    if profile.is_admin:
+        agents = User.objects.filter(profile__role='agent')
+        agent_performance = []
+        for agent in agents:
+            agent_fields = Field.objects.filter(assigned_agent=agent)
+            agent_performance.append({
+                'agent': agent,
+                'total': agent_fields.count(),
+                'active': len([f for f in agent_fields if f.computed_status == 'active']),
+                'at_risk': len([f for f in agent_fields if f.computed_status == 'at_risk']),
+                'completed': len([f for f in agent_fields if f.computed_status == 'completed']),
+            })
 
     context = {
         'profile': profile,
@@ -118,7 +131,8 @@ def dashboard(request):
         'completed_count': len(completed),
         'stage_counts': stage_counts,
         'recent_updates': recent_updates,
-        'crop_data': crop_data,          # ← new
+        'crop_data': crop_data,  
+        'agent_performance': agent_performance, # ← new
     }
     return render(request, 'fields/dashboard.html', context)
 
@@ -356,17 +370,123 @@ def agent_create(request):
     context = {'profile': profile}
     return render(request, 'fields/agent_form.html', context)
 
-def create_admin(request):
-    from django.http import HttpResponse
-    secret = request.GET.get('secret', '')
-    if secret != 'smartseason-setup-2026':
-        return HttpResponse('Forbidden', status=403)
-    
-    User.objects.filter(username='Admin').delete()
-    u = User.objects.create_superuser(
-        username='Admin',
-        email='test.admin@gmail.com',
-        password='Admin@2026'
-    )
-    UserProfile.objects.get_or_create(user=u, defaults={'role': 'admin'})
-    return HttpResponse(f'✅ Admin created! Username: Admin | Go to /login/ and sign in. DELETE this URL from views.py after use!')
+# ─── REST API Endpoints ───────────────────────────────────────
+
+@require_GET
+def api_fields(request):
+    """
+    GET /api/fields/
+    Returns all fields (admin) or assigned fields (agent).
+    Requires login.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
+
+    profile = get_object_or_404(UserProfile, user=request.user)
+
+    if profile.is_admin:
+        fields = Field.objects.all().select_related('assigned_agent')
+    else:
+        fields = Field.objects.filter(
+            assigned_agent=request.user
+        ).select_related('assigned_agent')
+
+    data = []
+    for field in fields:
+        data.append({
+            'id': field.pk,
+            'name': field.name,
+            'crop_type': field.crop_type,
+            'planting_date': str(field.planting_date),
+            'current_stage': field.current_stage,
+            'status': field.computed_status,
+            'location': field.location,
+            'size_acres': float(field.size_acres) if field.size_acres else None,
+            'days_since_planting': field.days_since_planting,
+            'assigned_agent': field.assigned_agent.username if field.assigned_agent else None,
+            'created_at': field.created_at.isoformat(),
+        })
+
+    return JsonResponse({
+        'count': len(data),
+        'fields': data,
+    })
+
+
+@require_GET
+def api_field_detail(request, pk):
+    """
+    GET /api/fields/<id>/
+    Returns a single field with its update history.
+    Requires login.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
+
+    profile = get_object_or_404(UserProfile, user=request.user)
+    field   = get_object_or_404(Field, pk=pk)
+
+    if profile.is_agent and field.assigned_agent != request.user:
+        return JsonResponse({'error': 'Access denied.'}, status=403)
+
+    updates = []
+    for u in field.updates.select_related('updated_by').all():
+        updates.append({
+            'id': u.pk,
+            'stage': u.stage,
+            'notes': u.notes,
+            'updated_by': u.updated_by.username if u.updated_by else None,
+            'created_at': u.created_at.isoformat(),
+        })
+
+    return JsonResponse({
+        'id': field.pk,
+        'name': field.name,
+        'crop_type': field.crop_type,
+        'planting_date': str(field.planting_date),
+        'current_stage': field.current_stage,
+        'status': field.computed_status,
+        'location': field.location,
+        'size_acres': float(field.size_acres) if field.size_acres else None,
+        'days_since_planting': field.days_since_planting,
+        'assigned_agent': field.assigned_agent.username if field.assigned_agent else None,
+        'created_at': field.created_at.isoformat(),
+        'updates': updates,
+    })
+
+
+@require_GET
+def api_dashboard(request):
+    """
+    GET /api/dashboard/
+    Returns dashboard summary stats.
+    Requires login.
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({'error': 'Authentication required.'}, status=401)
+
+    profile = get_object_or_404(UserProfile, user=request.user)
+
+    if profile.is_admin:
+        fields = Field.objects.all()
+    else:
+        fields = Field.objects.filter(assigned_agent=request.user)
+
+    fields_list = list(fields)
+
+    return JsonResponse({
+        'user': request.user.username,
+        'role': profile.role,
+        'summary': {
+            'total_fields': len(fields_list),
+            'active': len([f for f in fields_list if f.computed_status == 'active']),
+            'at_risk': len([f for f in fields_list if f.computed_status == 'at_risk']),
+            'completed': len([f for f in fields_list if f.computed_status == 'completed']),
+        },
+        'stages': {
+            'planted':   fields.filter(current_stage='planted').count(),
+            'growing':   fields.filter(current_stage='growing').count(),
+            'ready':     fields.filter(current_stage='ready').count(),
+            'harvested': fields.filter(current_stage='harvested').count(),
+        }
+    })

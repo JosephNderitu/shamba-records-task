@@ -27,8 +27,6 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('signup/', views.signup_view, name='signup'),
-    
-    path('setup-admin/', views.create_admin, name='create_admin'),
 
     # Dashboard
     path('', views.dashboard, name='dashboard'),
@@ -45,6 +43,11 @@ urlpatterns = [
     # Agents
     path('agents/', views.agent_list, name='agent_list'),
     path('agents/create/', views.agent_create, name='agent_create'),
+    
+    # ─── API Endpoints ────────────────────────────────
+    path('api/fields/',          views.api_fields,       name='api_fields'),
+    path('api/fields/<int:pk>/', views.api_field_detail, name='api_field_detail'),
+    path('api/dashboard/',       views.api_dashboard,    name='api_dashboard'),
 ]
 
 if settings.DEBUG:
