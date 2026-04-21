@@ -107,6 +107,17 @@ Status is computed dynamically as a model property — no extra database column 
 
 ---
 
+### 🧪 Live API Test Links
+
+> Must be logged in at [https://shamba-records-task.onrender.com/login/](https://shamba-records-task.onrender.com/login/) first before testing the links below.
+
+| Endpoint | Live Link | Description |
+|----------|-----------|-------------|
+| List Fields | [/api/fields/](https://shamba-records-task.onrender.com/api/fields/) | All fields accessible to logged-in user |
+| Field Detail | [/api/fields/1/](https://shamba-records-task.onrender.com/api/fields/1/) | Single field with full update history |
+| Dashboard Stats | [/api/dashboard/](https://shamba-records-task.onrender.com/api/dashboard/) | Summary stats for logged-in user |
+---
+
 ## ⚙️ CI/CD Pipeline
 
 Every push to `master` triggers GitHub Actions:

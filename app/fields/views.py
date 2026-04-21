@@ -6,6 +6,8 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from .models import Field, FieldUpdate, UserProfile
 from django.db.models import Count, Q
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
 
 
 # ─── Auth Views ───────────────────────────────────────────────
