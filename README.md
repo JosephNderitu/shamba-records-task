@@ -39,20 +39,6 @@
 
 ---
 
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Backend | Django 5.2 (Python 3.11) |
-| Database | PostgreSQL 15 |
-| Frontend | HTML5, Bootstrap 5, Chart.js, FontAwesome |
-| Web Server | Nginx + Gunicorn |
-| Containerization | Docker + Docker Compose |
-| Deployment | Render |
-| CI/CD | GitHub Actions |
-
----
-
 ## 🚀 Local Setup
 
 ### Prerequisites
