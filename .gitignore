@@ -7,3 +7,5 @@ postgres-data/
 staticfiles/
 media/
 .DS_Store
+venv/
+*.log

@@ -40,7 +40,8 @@
                 <td>{{ field.size_acres }} acres</td></tr>
             {% endif %}
             <tr><td style="color:var(--text-muted);padding:12px 16px;">Agent</td>
-                <td>{{ field.assigned_agent.get_full_name|default:field.assigned_agent.username|default:"Unassigned" }}</td></tr>
+                <td>{% if field.assigned_agent %}{{ field.assigned_agent.get_full_name|default:field.assigned_agent.username }}{% else %}<span style="color:var(--text-muted);">Unassigned</span>{% endif %}</td>
+            </tr>
             <tr><td style="color:var(--text-muted);padding:12px 16px;">Added</td>
                 <td>{{ field.created_at|date:"M d, Y" }}</td></tr>
           </tbody>

@@ -15,6 +15,15 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY app/ .
 
+# Collect static files at build time
+RUN python manage.py collectstatic --noinput || true
+
 EXPOSE 8000
 
-CMD ["gunicorn", "smartseason.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+# Use shell form so we can run multiple commands
+CMD python manage.py migrate --noinput && \
+    gunicorn smartseason.wsgi:application \
+    --bind 0.0.0.0:8000 \
+    --workers 2 \
+    --timeout 120 \
+    --log-level info

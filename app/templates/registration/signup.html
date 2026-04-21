@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block auth_content %}
+<div style="min-height:100vh;background:linear-gradient(135deg,var(--green-dark) 0%,var(--green-mid) 60%,var(--gold-main) 100%);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:480px;">
+
+    <!-- Logo -->
+    <div class="text-center mb-4">
+      <div style="width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;backdrop-filter:blur(10px);">
+        <i class="fa-solid fa-seedling" style="font-size:1.8rem;color:var(--gold-light);"></i>
+      </div>
+      <h2 style="color:#fff;font-family:'Playfair Display',serif;font-size:1.8rem;">SmartSeason</h2>
+      <p style="color:rgba(255,255,255,0.65);font-size:0.85rem;margin-top:4px;">Create your account</p>
+    </div>
+
+    <!-- Card -->
+    <div style="background:#fff;border-radius:16px;padding:36px 32px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <h5 style="color:var(--green-dark);margin-bottom:4px;font-size:1.1rem;">Join SmartSeason</h5>
+      <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:24px;">Fill in your details to get started</p>
+
+      {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mb-3" style="font-size:0.825rem;">
+          <i class="fa-solid fa-circle-exclamation me-2"></i>{{ message }}
+        </div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="POST">
+        {% csrf_token %}
+
+        <div class="row g-3">
+
+          <div class="col-6">
+            <label class="form-label">First Name</label>
+            <input type="text" name="first_name" class="form-control" placeholder="John"/>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Last Name</label>
+            <input type="text" name="last_name" class="form-control" placeholder="Doe"/>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Username *</label>
+            <div style="position:relative;">
+              <i class="fa-solid fa-user" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem;"></i>
+              <input type="text" name="username" class="form-control" style="padding-left:38px;" placeholder="Choose a username" required/>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <div style="position:relative;">
+              <i class="fa-solid fa-envelope" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem;"></i>
+              <input type="email" name="email" class="form-control" style="padding-left:38px;" placeholder="your@email.com"/>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Role *</label>
+            <div class="row g-2">
+              <div class="col-6">
+                <label id="role-agent-label" style="cursor:pointer;display:block;border:2px solid var(--green-main);border-radius:10px;padding:12px;text-align:center;background:var(--green-light);transition:all 0.2s;">
+                  <input type="radio" name="role" value="agent" checked style="display:none;" onchange="updateRoleLabels()"/>
+                  <i class="fa-solid fa-person-digging d-block mb-1" style="color:var(--green-main);font-size:1.2rem;"></i>
+                  <span style="font-size:0.82rem;font-weight:600;color:var(--green-dark);">Field Agent</span>
+                  <div style="font-size:0.7rem;color:var(--text-muted);">Manage assigned fields</div>
+                </label>
+              </div>
+              <div class="col-6">
+                <label id="role-admin-label" style="cursor:pointer;display:block;border:2px solid var(--gray-border);border-radius:10px;padding:12px;text-align:center;background:#fff;transition:all 0.2s;">
+                  <input type="radio" name="role" value="admin" style="display:none;" onchange="updateRoleLabels()"/>
+                  <i class="fa-solid fa-shield-halved d-block mb-1" style="color:var(--gold-main);font-size:1.2rem;"></i>
+                  <span style="font-size:0.82rem;font-weight:600;color:var(--green-dark);">Coordinator</span>
+                  <div style="font-size:0.7rem;color:var(--text-muted);">Oversee all fields</div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Password *</label>
+            <div style="position:relative;">
+              <i class="fa-solid fa-lock" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem;"></i>
+              <input type="password" name="password1" id="pw1" class="form-control" style="padding-left:38px;padding-right:42px;" placeholder="Min. 8 characters" required/>
+              <button type="button" onclick="togglePw('pw1','eye1')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">
+                <i class="fa-solid fa-eye" id="eye1" style="font-size:0.85rem;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label class="form-label">Confirm Password *</label>
+            <div style="position:relative;">
+              <i class="fa-solid fa-lock" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.85rem;"></i>
+              <input type="password" name="password2" id="pw2" class="form-control" style="padding-left:38px;padding-right:42px;" placeholder="Repeat password" required/>
+              <button type="button" onclick="togglePw('pw2','eye2')" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">
+                <i class="fa-solid fa-eye" id="eye2" style="font-size:0.85rem;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="col-12 mt-1">
+            <button type="submit" class="btn-green btn w-100" style="padding:12px;font-size:0.95rem;">
+              <i class="fa-solid fa-user-plus me-2"></i>Create Account
+            </button>
+          </div>
+
+        </div>
+      </form>
+
+      <p class="text-center mt-4 mb-0" style="font-size:0.82rem;color:var(--text-muted);">
+        Already have an account?
+        <a href="{% url 'login' %}" style="color:var(--green-main);font-weight:600;text-decoration:none;">Sign in</a>
+      </p>
+    </div>
+
+    <p class="text-center mt-3" style="color:rgba(255,255,255,0.45);font-size:0.75rem;">
+      SmartSeason &copy; 2024 — Agricultural Field Intelligence
+    </p>
+  </div>
+</div>
+
+<script>
+function togglePw(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon  = document.getElementById(iconId);
+  input.type  = input.type === 'password' ? 'text' : 'password';
+  icon.classList.toggle('fa-eye');
+  icon.classList.toggle('fa-eye-slash');
+}
+
+function updateRoleLabels() {
+  const agentChecked = document.querySelector('input[value="agent"]').checked;
+  const agentLabel   = document.getElementById('role-agent-label');
+  const adminLabel   = document.getElementById('role-admin-label');
+
+  if (agentChecked) {
+    agentLabel.style.borderColor = 'var(--green-main)';
+    agentLabel.style.background  = 'var(--green-light)';
+    adminLabel.style.borderColor = 'var(--gray-border)';
+    adminLabel.style.background  = '#fff';
+  } else {
+    adminLabel.style.borderColor = 'var(--gold-main)';
+    adminLabel.style.background  = 'var(--gold-pale)';
+    agentLabel.style.borderColor = 'var(--gray-border)';
+    agentLabel.style.background  = '#fff';
+  }
+}
+</script>
+{% endblock %}

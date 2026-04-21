@@ -2,6 +2,14 @@
 {% block title %}Dashboard — SmartSeason{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+  .chart-card { background:#fff; border:1px solid var(--gray-border); border-radius:12px; padding:20px; height:100%; }
+  .chart-card .chart-title { font-size:0.875rem; font-weight:600; color:var(--green-dark); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .chart-wrapper { position:relative; }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <!-- Stat Cards -->
@@ -44,31 +52,65 @@
   </div>
 </div>
 
-<div class="row g-4">
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
 
-  <!-- Stage Breakdown -->
-  <div class="col-12 col-lg-4">
-    <div class="card h-100">
-      <div class="card-header">
-        <i class="fa-solid fa-chart-pie me-2" style="color:var(--gold-main);"></i>Stage Breakdown
+  <!-- Status Doughnut -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="fa-solid fa-circle-half-stroke" style="color:var(--gold-main);"></i>
+        Field Status Overview
       </div>
-      <div class="card-body p-3">
-        {% for stage, count in stage_counts.items %}
-        <div class="mb-3">
-          <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="stage-badge stage-{{ stage }}">{{ stage|title }}</span>
-            <span style="font-size:0.85rem;font-weight:600;color:var(--green-dark);">{{ count }}</span>
-          </div>
-          <div class="progress">
-            <div class="progress-bar" style="width:{% if total_fields %}{% widthratio count total_fields 100 %}{% else %}0{% endif %}%"></div>
-          </div>
-        </div>
-        {% endfor %}
+      <div class="chart-wrapper" style="height:220px;">
+        <canvas id="statusChart"></canvas>
+      </div>
+      <div class="d-flex justify-content-center gap-3 mt-3 flex-wrap">
+        <span style="font-size:0.75rem;display:flex;align-items:center;gap:5px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#2D6A2D;display:inline-block;"></span>Active ({{ active_count }})
+        </span>
+        <span style="font-size:0.75rem;display:flex;align-items:center;gap:5px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#D4A017;display:inline-block;"></span>At Risk ({{ at_risk_count }})
+        </span>
+        <span style="font-size:0.75rem;display:flex;align-items:center;gap:5px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:#9CA3AF;display:inline-block;"></span>Completed ({{ completed_count }})
+        </span>
       </div>
     </div>
   </div>
 
-  <!-- Recent Fields Table -->
+  <!-- Stage Bar Chart -->
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="fa-solid fa-chart-bar" style="color:var(--gold-main);"></i>
+        Fields by Stage
+      </div>
+      <div class="chart-wrapper" style="height:220px;">
+        <canvas id="stageChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crop Type Polar Chart -->
+  <div class="col-12 col-xl-4">
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="fa-solid fa-chart-pie" style="color:var(--gold-main);"></i>
+        Crop Type Distribution
+      </div>
+      <div class="chart-wrapper" style="height:220px;">
+        <canvas id="cropChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Fields Table + Activity -->
+<div class="row g-4">
+
+  <!-- Fields Table -->
   <div class="col-12 col-lg-8">
     <div class="card h-100">
       <div class="card-header d-flex justify-content-between align-items-center">
@@ -105,17 +147,12 @@
                     <i class="fa-solid fa-location-dot me-1"></i>{{ field.location }}
                   </div>
                   {% endif %}
-                  <!-- Show crop on mobile inline -->
                   <div class="d-md-none mt-1" style="font-size:0.73rem;color:var(--text-muted);text-transform:capitalize;">
                     <i class="fa-solid fa-seedling me-1"></i>{{ field.crop_type }}
                   </div>
                 </td>
                 <td class="hide-mobile" style="text-transform:capitalize;">{{ field.crop_type }}</td>
-                <td>
-                  <span class="stage-badge stage-{{ field.current_stage }}">
-                    {{ field.get_current_stage_display }}
-                  </span>
-                </td>
+                <td><span class="stage-badge stage-{{ field.current_stage }}">{{ field.get_current_stage_display }}</span></td>
                 <td>
                   <span class="stage-badge badge-{{ field.computed_status }}">
                     {% if field.computed_status == 'at_risk' %}At Risk
@@ -125,7 +162,7 @@
                 </td>
                 {% if profile.is_admin %}
                 <td class="hide-mobile" style="font-size:0.82rem;color:var(--text-muted);">
-                  {{ field.assigned_agent.get_full_name|default:field.assigned_agent.username|default:"—" }}
+                  {% if field.assigned_agent %}{{ field.assigned_agent.get_full_name|default:field.assigned_agent.username }}{% else %}—{% endif %}
                 </td>
                 {% endif %}
               </tr>
@@ -135,7 +172,7 @@
         </div>
         {% else %}
         <div class="text-center py-5" style="color:var(--text-muted);">
-          <i class="fa-solid fa-seedling mb-3 d-block" style="font-size:2.5rem;color:var(--green-light);"></i>
+          <i class="fa-solid fa-seedling d-block mb-3" style="font-size:2.5rem;color:var(--green-light);"></i>
           <p class="mb-3">No fields found.</p>
           {% if profile.is_admin %}
           <a href="{% url 'field_create' %}" class="btn-green">
@@ -149,35 +186,33 @@
   </div>
 
   <!-- Recent Activity -->
-  <div class="col-12">
-    <div class="card">
+  <div class="col-12 col-lg-4">
+    <div class="card h-100">
       <div class="card-header">
         <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--gold-main);"></i>Recent Activity
       </div>
-      <div class="card-body">
+      <div class="card-body" style="max-height:400px;overflow-y:auto;">
         {% if recent_updates %}
         <div class="timeline">
           {% for update in recent_updates %}
           <div class="timeline-item">
-            <div class="d-flex justify-content-between align-items-start gap-3">
-              <div style="min-width:0;">
-                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                  <a href="{% url 'field_detail' update.field.pk %}"
-                     style="color:var(--green-dark);font-weight:600;font-size:0.875rem;text-decoration:none;">
-                    {{ update.field.name }}
-                  </a>
-                  <span style="color:var(--text-muted);font-size:0.78rem;">→</span>
-                  <span class="stage-badge stage-{{ update.stage }}">{{ update.get_stage_display }}</span>
-                </div>
-                {% if update.notes %}
-                <p style="font-size:0.82rem;color:var(--text-muted);background:var(--gray-soft);border-radius:8px;padding:8px 12px;margin:0;border-left:3px solid var(--green-main);word-break:break-word;">
-                  {{ update.notes|truncatechars:120 }}
-                </p>
-                {% endif %}
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <a href="{% url 'field_detail' update.field.pk %}"
+                   style="color:var(--green-dark);font-weight:600;font-size:0.82rem;text-decoration:none;">
+                  {{ update.field.name }}
+                </a>
+                <span class="stage-badge stage-{{ update.stage }}" style="font-size:0.65rem;">
+                  {{ update.get_stage_display }}
+                </span>
               </div>
-              <div style="text-align:right;flex-shrink:0;">
-                <div style="font-size:0.73rem;color:var(--text-muted);white-space:nowrap;">{{ update.created_at|timesince }} ago</div>
-                <div style="font-size:0.73rem;color:var(--green-main);white-space:nowrap;">{{ update.updated_by.username }}</div>
+              {% if update.notes %}
+              <p style="font-size:0.78rem;color:var(--text-muted);margin:0 0 4px;border-left:2px solid var(--green-main);padding-left:8px;">
+                {{ update.notes|truncatechars:70 }}
+              </p>
+              {% endif %}
+              <div style="font-size:0.72rem;color:var(--text-muted);">
+                {{ update.created_at|timesince }} ago · {{ update.updated_by.username }}
               </div>
             </div>
           </div>
@@ -194,4 +229,119 @@
   </div>
 
 </div>
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+  // Data from Django
+  const activeCount    = {{ active_count }};
+  const atRiskCount    = {{ at_risk_count }};
+  const completedCount = {{ completed_count }};
+  const stageCounts    = {
+    planted:   {{ stage_counts.planted }},
+    growing:   {{ stage_counts.growing }},
+    ready:     {{ stage_counts.ready }},
+    harvested: {{ stage_counts.harvested }},
+  };
+  const cropData = {{ crop_data|safe }};
+
+  // ── Chart Defaults ──
+  Chart.defaults.font.family = "'Inter', sans-serif";
+  Chart.defaults.plugins.legend.display = false;
+
+  // ── 1. Status Doughnut ──
+  new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Active', 'At Risk', 'Completed'],
+      datasets: [{
+        data: [activeCount, atRiskCount, completedCount],
+        backgroundColor: ['#2D6A2D', '#D4A017', '#9CA3AF'],
+        borderWidth: 3,
+        borderColor: '#fff',
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.label}: ${ctx.parsed} fields`
+          }
+        }
+      }
+    }
+  });
+
+  // ── 2. Stage Bar Chart ──
+  new Chart(document.getElementById('stageChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Planted', 'Growing', 'Ready', 'Harvested'],
+      datasets: [{
+        data: [stageCounts.planted, stageCounts.growing, stageCounts.ready, stageCounts.harvested],
+        backgroundColor: ['#BFDBFE', '#6EE7B7', '#FDE68A', '#D1D5DB'],
+        borderColor:     ['#1D4ED8', '#065F46', '#92400E', '#374151'],
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1, font: { size: 11 } },
+          grid: { color: '#F3F4F6' }
+        },
+        x: {
+          ticks: { font: { size: 11 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // ── 3. Crop Polar Chart ──
+  new Chart(document.getElementById('cropChart'), {
+    type: 'polarArea',
+    data: {
+      labels: cropData.labels,
+      datasets: [{
+        data: cropData.values,
+        backgroundColor: [
+          'rgba(45,106,45,0.7)',   'rgba(212,160,23,0.7)',
+          'rgba(16,185,129,0.7)',  'rgba(139,92,246,0.7)',
+          'rgba(239,68,68,0.7)',   'rgba(245,158,11,0.7)',
+          'rgba(107,114,128,0.7)', 'rgba(59,130,246,0.7)',
+        ],
+        borderWidth: 2,
+        borderColor: '#fff',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: { font: { size: 10 }, boxWidth: 12, padding: 8 }
+        }
+      },
+      scales: {
+        r: { ticks: { display: false }, grid: { color: '#F3F4F6' } }
+      }
+    }
+  });
+</script>
 {% endblock %}

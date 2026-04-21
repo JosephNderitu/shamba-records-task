@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -8,6 +9,41 @@ from django.db.models import Count, Q
 
 
 # ─── Auth Views ───────────────────────────────────────────────
+
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        username   = request.POST.get('username')
+        email      = request.POST.get('email', '')
+        password1  = request.POST.get('password1')
+        password2  = request.POST.get('password2')
+        first_name = request.POST.get('first_name', '')
+        last_name  = request.POST.get('last_name', '')
+        role       = request.POST.get('role', 'agent')
+
+        # Validations
+        if password1 != password2:
+            messages.error(request, 'Passwords do not match.')
+        elif User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already taken.')
+        elif len(password1) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+        else:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password1,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            UserProfile.objects.create(user=user, role=role)
+            login(request, user)
+            messages.success(request, f'Welcome to SmartSeason, {user.first_name or user.username}!')
+            return redirect('dashboard')
+
+    return render(request, 'registration/signup.html')
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -65,6 +101,14 @@ def dashboard(request):
             field__assigned_agent=request.user
         ).select_related('field', 'updated_by')[:10]
 
+    # inside dashboard view, replace the context block with:
+    # Crop type breakdown for chart
+    crop_counts = fields.values('crop_type').annotate(count=Count('id')).order_by('-count')
+    crop_data = json.dumps({
+        'labels': [c['crop_type'].capitalize() for c in crop_counts],
+        'values': [c['count'] for c in crop_counts],
+    })
+
     context = {
         'profile': profile,
         'fields': fields,
@@ -74,6 +118,7 @@ def dashboard(request):
         'completed_count': len(completed),
         'stage_counts': stage_counts,
         'recent_updates': recent_updates,
+        'crop_data': crop_data,          # ← new
     }
     return render(request, 'fields/dashboard.html', context)
 
