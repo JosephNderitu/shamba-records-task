@@ -39,6 +39,20 @@
 
 ---
 
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | Django 5.2 (Python 3.11) |
+| Database | PostgreSQL 15 |
+| Frontend | HTML5, Bootstrap 5, Chart.js, FontAwesome |
+| Web Server | Nginx + Gunicorn |
+| Containerization | Docker + Docker Compose |
+| Deployment | Render |
+| CI/CD | GitHub Actions |
+
+---
+
 ## 🚀 Local Setup
 
 ### Prerequisites
@@ -120,27 +134,6 @@ Every push to `master` triggers GitHub Actions:
 - A field with no update history is immediately flagged **At Risk** for safety
 - The 7-day and 90-day thresholds are adjustable per crop type in future iterations
 
----
-
-## 📁 Project Structure
-shamba-records-task/
-├── app/
-│   ├── fields/          # Main Django app
-│   │   ├── models.py    # Field, FieldUpdate, UserProfile
-│   │   ├── views.py     # All view logic
-│   │   ├── admin.py     # Jazzmin-enhanced admin
-│   │   └── tests.py     # Test suite
-│   ├── smartseason/     # Django project config
-│   ├── templates/       # HTML templates
-│   └── requirements.txt
-├── nginx/               # Nginx config
-├── .github/workflows/   # CI/CD pipeline
-├── docker-compose.yml
-├── Dockerfile
-├── render.yaml
-└── .env.example
-
----
 
 ## 👨‍💻 Author
 
